@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="app-menu-master">
+  <schema id="org.gnome.shell.extensions.app-menu-master" path="/org/gnome/shell/extensions/app-menu-master/">
+
+    <!-- Görünüm Modu -->
+    <key name="view-mode" type="s">
+      <default>'folders-grid'</default>
+      <summary>Görünüm Modu</summary>
+      <description>folders-grid, flat-grid veya list</description>
+    </key>
+
+    <key name="list-columns" type="i">
+      <range min="1" max="4"/>
+      <default>2</default>
+      <summary>Liste görünümü sütun sayısı</summary>
+    </key>
+
+    <key name="list-show-descriptions" type="b">
+      <default>true</default>
+      <summary>Liste görünümünde uygulama açıklamasını göster</summary>
+    </key>
+
+    <key name="hide-page-indicators" type="b">
+      <default>false</default>
+      <summary>Sayfa göstergelerini gizle</summary>
+    </key>
+
+    <!-- Sıralama -->
+    <key name="sort-mode" type="s">
+      <default>'az'</default>
+      <summary>Sıralama Modu</summary>
+      <description>az, za veya manual</description>
+    </key>
+
+    <key name="folders-first" type="b">
+      <default>true</default>
+      <summary>Klasörleri en başa sabitle</summary>
+    </key>
+
+    <key name="uncategorized-last" type="b">
+      <default>true</default>
+      <summary>Kategorisiz uygulamaları (Web App vb.) en sonda göster</summary>
+    </key>
+
+    <key name="sort-inside-folders" type="b">
+      <default>true</default>
+      <summary>Klasör içindeki uygulamaları da sırala</summary>
+    </key>
+
+    <key name="auto-sort-on-change" type="b">
+      <default>true</default>
+      <summary>Yeni uygulama kurulduğunda/kaldırıldığında otomatik sırala</summary>
+    </key>
+
+    <key name="auto-categorize-on-install" type="b">
+      <default>false</default>
+      <summary>Uygulamaları türlerine göre otomatik klasörlere grupla</summary>
+    </key>
+
+    <key name="sort-trigger" type="i">
+      <default>0</default>
+      <summary>Anlık sıralama tetikleyicisi</summary>
+    </key>
+
+    <!-- Izgara ve Görsel Özelleştirme -->
+    <key name="custom-grid-size" type="b">
+      <default>false</default>
+      <summary>Özel ızgara boyutunu etkinleştir</summary>
+    </key>
+
+    <key name="grid-rows" type="i">
+      <range min="2" max="10"/>
+      <default>4</default>
+      <summary>Ana ızgara satır sayısı</summary>
+    </key>
+
+    <key name="grid-columns" type="i">
+      <range min="3" max="12"/>
+      <default>6</default>
+      <summary>Ana ızgara sütun sayısı</summary>
+    </key>
+
+    <key name="folder-rows" type="i">
+      <range min="2" max="8"/>
+      <default>3</default>
+      <summary>Klasör içi satır sayısı</summary>
+    </key>
+
+    <key name="folder-columns" type="i">
+      <range min="2" max="8"/>
+      <default>4</default>
+      <summary>Klasör içi sütun sayısı</summary>
+    </key>
+
+    <key name="icon-size" type="i">
+      <range min="0" max="128"/>
+      <default>0</default>
+      <summary>İkon boyutu (0 = varsayılan)</summary>
+    </key>
+
+    <key name="label-font-size" type="i">
+      <range min="0" max="24"/>
+      <default>0</default>
+      <summary>Etiket yazı tipi boyutu (0 = varsayılan)</summary>
+    </key>
+
+    <key name="two-line-labels" type="b">
+      <default>true</default>
+      <summary>Uzun uygulama adlarını iki satırda göster</summary>
+    </key>
+
+    <!-- Sağ Tık Menüsü -->
+    <key name="menu-add-desktop" type="b">
+      <default>true</default>
+      <summary>Sağ tık menüsünde Masaüstüne Kısayol Ekle göster</summary>
+    </key>
+
+    <key name="menu-uninstall" type="b">
+      <default>true</default>
+      <summary>Sağ tık menüsünde Uygulamayı Kaldır göster</summary>
+    </key>
+
+    <key name="menu-move-folder" type="b">
+      <default>true</default>
+      <summary>Sağ tık menüsünde Klasöre Taşı alt menüsü göster</summary>
+    </key>
+
+    <key name="menu-hide-app" type="b">
+      <default>true</default>
+      <summary>Sağ tık menüsünde Uygulamayı Gizle göster</summary>
+    </key>
+
+    <key name="menu-open-desktop-file" type="b">
+      <default>true</default>
+      <summary>Sağ tık menüsünde .desktop Konumunu Aç göster</summary>
+    </key>
+
+    <key name="uninstall-method" type="s">
+      <default>'auto'</default>
+      <summary>Kaldırma yöntemi</summary>
+      <description>auto, pkexec veya store</description>
+    </key>
+
+    <!-- Gizlenen Uygulamalar ve Panel -->
+    <key name="hidden-apps" type="as">
+      <default>[]</default>
+      <summary>App Grid'den gizlenen uygulama ID listesi</summary>
+    </key>
+
+    <key name="show-panel-button" type="b">
+      <default>false</default>
+      <summary>Üst panelde hızlı erişim simgesi göster</summary>
+    </key>
+
+    <!-- AppImage Yöneticisi -->
+    <key name="appimage-enabled" type="b">
+      <default>true</default>
+      <summary>AppImage klasör izlemeyi etkinleştir</summary>
+    </key>
+
+    <key name="appimage-directory" type="s">
+      <default>''</default>
+      <summary>İzlenecek AppImage klasörü (boş ise ~/Applications)</summary>
+    </key>
+
+    <key name="appimage-deep-icon-search" type="b">
+      <default>true</default>
+      <summary>AppImage paket içinde derin ikon araması yap</summary>
+    </key>
+
+    <key name="appimage-rescan-trigger" type="i">
+      <default>0</default>
+      <summary>Anlık AppImage tarama tetikleyicisi</summary>
+    </key>
+
+  </schema>
+</schemalist>

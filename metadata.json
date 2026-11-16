@@ -1,0 +1,15 @@
+{
+  "uuid": "app-menu-master@nikolayco.local",
+  "name": "App Menu Master",
+  "description": "All-in-one App Grid & application menu manager: alphabetical sorting, folder/flat/list views, custom grid size, right-click desktop shortcut, app hiding, uninstalling, and JSON backup.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.app-menu-master",
+  "gettext-domain": "app-menu-master",
+  "version": 1,
+  "url": "https://github.com/Nikolayco/Gnome-App-Menu-Master"
+}
