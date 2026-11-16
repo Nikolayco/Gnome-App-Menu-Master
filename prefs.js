@@ -599,7 +599,15 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
         const defaultDir = GLib.build_filenamev([GLib.get_home_dir(), 'Applications']);
         const getEffectiveDir = () => {
             const val = (settings.get_string('appimage-directory') || '').trim();
-            return val || defaultDir;
+            const target = val || defaultDir;
+            try {
+                const dirFile = Gio.File.new_for_path(target);
+                if (!dirFile.query_exists(null))
+                    dirFile.make_directory_with_parents(null);
+            } catch (_e) {
+                // ignore
+            }
+            return target;
         };
 
         const dirRow = new Adw.ActionRow({
