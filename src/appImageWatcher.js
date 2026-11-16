@@ -1,6 +1,40 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+function loadFileContentsAsync(file) {
+    return new Promise(resolve => {
+        file.load_contents_async(null, (f, res) => {
+            try {
+                const [ok, bytes] = f.load_contents_finish(res);
+                resolve(ok && bytes ? bytes : null);
+            } catch (_e) {
+                resolve(null);
+            }
+        });
+    });
+}
+
+function replaceFileContentsAsync(file, uint8Data) {
+    return new Promise(resolve => {
+        const bytes = new GLib.Bytes(uint8Data);
+        file.replace_contents_bytes_async(
+            bytes,
+            null,
+            false,
+            Gio.FileCreateFlags.REPLACE_DESTINATION,
+            null,
+            (f, res) => {
+                try {
+                    f.replace_contents_finish(res);
+                    resolve(true);
+                } catch (_e) {
+                    resolve(false);
+                }
+            }
+        );
+    });
+}
+
 export class AppImageWatcher {
     constructor(settings, onChanged) {
         this._settings = settings;
@@ -12,7 +46,8 @@ export class AppImageWatcher {
             'app-menu-master',
             'appimages.json',
         ]);
-        this._cache = this._loadCache();
+        this._cache = {};
+        this._cacheLoadedPromise = this._loadCacheAsync();
     }
 
     getMonitoredDirectory() {
@@ -89,28 +124,28 @@ export class AppImageWatcher {
         });
     }
 
-    _loadCache() {
+    async _loadCacheAsync() {
         try {
             const file = Gio.File.new_for_path(this._cachePath);
             if (!file.query_exists(null))
-                return {};
-            const [ok, bytes] = file.load_contents(null);
-            if (!ok || !bytes)
-                return {};
-            return JSON.parse(new TextDecoder().decode(bytes)) || {};
+                return;
+            const bytes = await loadFileContentsAsync(file);
+            if (!bytes)
+                return;
+            this._cache = JSON.parse(new TextDecoder().decode(bytes)) || {};
         } catch (_e) {
-            return {};
+            this._cache = {};
         }
     }
 
-    _saveCache() {
+    async _saveCacheAsync() {
         try {
             const file = Gio.File.new_for_path(this._cachePath);
             const parent = file.get_parent();
             if (parent && !parent.query_exists(null))
                 parent.make_directory_with_parents(null);
             const data = new TextEncoder().encode(JSON.stringify(this._cache, null, 2));
-            file.replace_contents(data, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+            await replaceFileContentsAsync(file, data);
         } catch (_e) {
             // ignore
         }
@@ -143,6 +178,7 @@ export class AppImageWatcher {
     }
 
     async rescan() {
+        await this._cacheLoadedPromise;
         if (!this._settings.get_boolean('appimage-enabled'))
             return;
 
@@ -184,7 +220,7 @@ export class AppImageWatcher {
         }
 
         if (changed) {
-            this._saveCache();
+            await this._saveCacheAsync();
             if (this._onChanged)
                 this._onChanged();
         }
@@ -225,13 +261,7 @@ export class AppImageWatcher {
         ].join('\n');
 
         const dFile = Gio.File.new_for_path(desktopFilePath);
-        dFile.replace_contents(
-            new TextEncoder().encode(desktopText),
-            null,
-            false,
-            Gio.FileCreateFlags.REPLACE_DESTINATION,
-            null
-        );
+        await replaceFileContentsAsync(dFile, new TextEncoder().encode(desktopText));
 
         this._cache[filePath] = {
             name: meta.name,
@@ -298,7 +328,7 @@ export class AppImageWatcher {
 
                 const squashRoot = Gio.File.new_for_path(GLib.build_filenamev([tmpDir, 'squashfs-root']));
                 if (squashRoot.query_exists(null)) {
-                    const parsed = this._parseSquashDesktop(squashRoot);
+                    const parsed = await this._parseSquashDesktopAsync(squashRoot);
                     if (parsed.name)
                         name = parsed.name;
                     if (parsed.categories)
@@ -347,7 +377,7 @@ export class AppImageWatcher {
         return { name, slug, categories, iconPath };
     }
 
-    _parseSquashDesktop(squashRoot) {
+    async _parseSquashDesktopAsync(squashRoot) {
         const result = { name: null, icon: null, categories: null };
         try {
             const enumerator = squashRoot.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
@@ -364,8 +394,8 @@ export class AppImageWatcher {
             if (!desktopChild)
                 return result;
 
-            const [ok, bytes] = desktopChild.load_contents(null);
-            if (!ok || !bytes)
+            const bytes = await loadFileContentsAsync(desktopChild);
+            if (!bytes)
                 return result;
 
             const text = new TextDecoder().decode(bytes);

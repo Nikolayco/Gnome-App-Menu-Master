@@ -18,7 +18,6 @@ import { getCollator, t } from './src/i18n.js';
 export default class AppMenuMasterPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
-        this._collator = getCollator();
         window.set_default_size(760, 680);
 
         this._buildViewPage(window, settings);
@@ -243,10 +242,15 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             valign: Gtk.Align.CENTER,
             css_classes: ['suggested-action'],
         });
+        const folderListGroup = new Adw.PreferencesGroup({
+            title: t('Existing Folders'),
+        });
+        const folderRows = [];
+
         autoCatBtn.connect('clicked', () => {
             const res = autoCategorizeApps();
             settings.set_int('sort-trigger', settings.get_int('sort-trigger') + 1);
-            this._refreshFolderList(folderListGroup, window, settings);
+            this._refreshFolderList(folderListGroup, folderRows, window, settings);
             window.add_toast(new Adw.Toast({
                 title: t('%d category folders updated (%d apps grouped).', res.folderCount, res.appCount),
             }));
@@ -293,27 +297,23 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             createFolder(name);
             newFolderEntry.set_text('');
             settings.set_int('sort-trigger', settings.get_int('sort-trigger') + 1);
-            this._refreshFolderList(folderListGroup, window, settings);
+            this._refreshFolderList(folderListGroup, folderRows, window, settings);
             window.add_toast(new Adw.Toast({ title: t('Folder "%s" created.', name) }));
         });
         newFolderEntry.add_suffix(addBtn);
         createGroup.add(newFolderEntry);
         page.add(createGroup);
 
-        const folderListGroup = new Adw.PreferencesGroup({
-            title: t('Existing Folders'),
-        });
-        this._folderRows = [];
-        this._refreshFolderList(folderListGroup, window, settings);
+        this._refreshFolderList(folderListGroup, folderRows, window, settings);
         page.add(folderListGroup);
 
         window.add(page);
     }
 
-    _refreshFolderList(group, window, settings) {
-        for (const r of this._folderRows)
+    _refreshFolderList(group, folderRows, window, settings) {
+        for (const r of folderRows)
             group.remove(r);
-        this._folderRows = [];
+        folderRows.length = 0;
 
         const foldersSettings = getAppFoldersSettings();
         const folderIds = foldersSettings.get_strv('folder-children');
@@ -324,7 +324,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
                 subtitle: t('Use the field above to create a folder or click "Auto-Group".'),
             });
             group.add(emptyRow);
-            this._folderRows.push(emptyRow);
+            folderRows.push(emptyRow);
             return;
         }
 
@@ -346,7 +346,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             editAppsBtn.connect('clicked', () => {
                 this._openFolderAppsDialog(window, folderId, name, () => {
                     settings.set_int('sort-trigger', settings.get_int('sort-trigger') + 1);
-                    this._refreshFolderList(group, window, settings);
+                    this._refreshFolderList(group, folderRows, window, settings);
                 });
             });
 
@@ -358,7 +358,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             renameBtn.connect('clicked', () => {
                 this._openRenameDialog(window, folderId, name, () => {
                     settings.set_int('sort-trigger', settings.get_int('sort-trigger') + 1);
-                    this._refreshFolderList(group, window, settings);
+                    this._refreshFolderList(group, folderRows, window, settings);
                 });
             });
 
@@ -371,7 +371,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             delBtn.connect('clicked', () => {
                 deleteFolder(folderId);
                 settings.set_int('sort-trigger', settings.get_int('sort-trigger') + 1);
-                this._refreshFolderList(group, window, settings);
+                this._refreshFolderList(group, folderRows, window, settings);
                 window.add_toast(new Adw.Toast({ title: t('Folder "%s" deleted.', name) }));
             });
 
@@ -379,7 +379,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             row.add_suffix(renameBtn);
             row.add_suffix(delBtn);
             group.add(row);
-            this._folderRows.push(row);
+            folderRows.push(row);
         }
     }
 
@@ -459,9 +459,10 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             margin_end: 12,
         });
 
+        const collator = getCollator();
         const allApps = Gio.AppInfo.get_all()
             .filter(i => i.should_show())
-            .sort((a, b) => this._collator.compare(a.get_display_name() || '', b.get_display_name() || ''));
+            .sort((a, b) => collator.compare(a.get_display_name() || '', b.get_display_name() || ''));
 
         for (const info of allApps) {
             const id = info.get_id();
@@ -543,9 +544,10 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
         hideGroup.add(searchEntry);
 
         const hiddenSet = new Set(settings.get_strv('hidden-apps'));
+        const collator = getCollator();
         const allApps = Gio.AppInfo.get_all()
             .filter(i => i.should_show())
-            .sort((a, b) => this._collator.compare(a.get_display_name() || '', b.get_display_name() || ''));
+            .sort((a, b) => collator.compare(a.get_display_name() || '', b.get_display_name() || ''));
 
         const appRows = [];
         for (const info of allApps) {
@@ -617,6 +619,11 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             label: getEffectiveDir(),
             valign: Gtk.Align.CENTER,
         });
+        const listGroup = new Adw.PreferencesGroup({
+            title: t('Detected AppImage Packages'),
+        });
+        const appImageRows = [];
+
         dirBtn.connect('clicked', () => {
             const dlg = new Gtk.FileDialog({
                 title: t('Select Monitored Directory'),
@@ -628,7 +635,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
                         const path = folder.get_path();
                         settings.set_string('appimage-directory', path);
                         dirBtn.set_label(path);
-                        this._refreshAppImageList(listGroup, window, settings, getEffectiveDir);
+                        this._refreshAppImageList(listGroup, appImageRows, window, settings, getEffectiveDir);
                     }
                 } catch (_e) {
                     // user cancelled
@@ -657,7 +664,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
         });
         rescanBtn.connect('clicked', () => {
             settings.set_int('appimage-rescan-trigger', settings.get_int('appimage-rescan-trigger') + 1);
-            this._refreshAppImageList(listGroup, window, settings, getEffectiveDir);
+            this._refreshAppImageList(listGroup, appImageRows, window, settings, getEffectiveDir);
             window.add_toast(new Adw.Toast({ title: t('AppImage directory scan triggered.') }));
         });
         rescanRow.add_suffix(rescanBtn);
@@ -665,20 +672,16 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
 
         page.add(generalGroup);
 
-        const listGroup = new Adw.PreferencesGroup({
-            title: t('Detected AppImage Packages'),
-        });
-        this._appImageRows = [];
-        this._refreshAppImageList(listGroup, window, settings, getEffectiveDir);
+        this._refreshAppImageList(listGroup, appImageRows, window, settings, getEffectiveDir);
         page.add(listGroup);
 
         window.add(page);
     }
 
-    _refreshAppImageList(group, window, settings, getEffectiveDir) {
-        for (const r of (this._appImageRows || []))
+    _refreshAppImageList(group, appImageRows, window, settings, getEffectiveDir) {
+        for (const r of appImageRows)
             group.remove(r);
-        this._appImageRows = [];
+        appImageRows.length = 0;
 
         const dirPath = getEffectiveDir();
         const dirFile = Gio.File.new_for_path(dirPath);
@@ -709,11 +712,12 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
                 subtitle: dirPath,
             });
             group.add(emptyRow);
-            this._appImageRows.push(emptyRow);
+            appImageRows.push(emptyRow);
             return;
         }
 
-        files.sort((a, b) => this._collator.compare(a.name, b.name));
+        const collator = getCollator();
+        files.sort((a, b) => collator.compare(a.name, b.name));
 
         for (const item of files) {
             const row = new Adw.ActionRow({
@@ -744,7 +748,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
                 try {
                     Gio.File.new_for_path(item.path).delete(null);
                     settings.set_int('appimage-rescan-trigger', settings.get_int('appimage-rescan-trigger') + 1);
-                    this._refreshAppImageList(group, window, settings, getEffectiveDir);
+                    this._refreshAppImageList(group, appImageRows, window, settings, getEffectiveDir);
                     window.add_toast(new Adw.Toast({ title: t('%s deleted.', item.name) }));
                 } catch (e) {
                     window.add_toast(new Adw.Toast({ title: t('Could not delete: %s', e.message) }));
@@ -754,7 +758,7 @@ export default class AppMenuMasterPreferences extends ExtensionPreferences {
             row.add_suffix(openFolderBtn);
             row.add_suffix(delBtn);
             group.add(row);
-            this._appImageRows.push(row);
+            appImageRows.push(row);
         }
     }
 
